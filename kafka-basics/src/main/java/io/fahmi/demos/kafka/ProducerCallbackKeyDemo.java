@@ -9,10 +9,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 
-public class ProducerDemo {
-    private static final Logger log = LoggerFactory.getLogger(ProducerDemo.class.getSimpleName());
+public class ProducerCallbackKeyDemo {
+    private static final Logger log = LoggerFactory.getLogger(ProducerCallbackKeyDemo.class.getSimpleName());
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         log.info("Hello world");
 
         Properties properties = new Properties();
@@ -22,9 +22,17 @@ public class ProducerDemo {
 
         KafkaProducer<String, String> producer = new KafkaProducer<>(properties);
 
-        ProducerRecord<String, String> producerRecord = new ProducerRecord<>("topic1","key1","hello world");
+        for (int i = 0; i < 10; i++) {
+            ProducerRecord<String, String> producerRecord =
+                    new ProducerRecord<>("topic1", "key" + i,"hello world " + i);
+            int finalI = i;
+            producer.send(producerRecord, (metadata, exception) -> {
+                log.info("iteration: {}, topic: {}, offset: {}, partition: {}", finalI, metadata.topic(), metadata.offset(), metadata.partition());
+            });
 
-        producer.send(producerRecord);
+            Thread.sleep(1000);
+        }
+
 
         producer.flush();
 
